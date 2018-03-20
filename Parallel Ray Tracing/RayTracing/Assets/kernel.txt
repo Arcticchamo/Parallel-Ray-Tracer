@@ -1,0 +1,310 @@
+struct Vec3
+{
+float x, y, z;
+};
+
+struct Colour
+{
+float R, G, B, A;
+};
+
+struct Ray
+{
+struct Vec3 m_origin;
+struct Vec3 m_direction;
+};
+
+struct Sphere
+{
+struct Vec3 m_center;
+float m_radius;
+struct Colour m_colour;
+};
+
+float DotPro(struct Vec3 _a, struct Vec3 _b)
+{
+	return ((_a.x * _b.x) + (_a.y * _b.y) + (_a.z * _b.z));
+}
+
+struct Vec3 CrossPro(struct Vec3 _a, struct Vec3 _b)
+{
+	struct Vec3 Temp;
+	Temp.x = (_a.y * _b.z) - (_a.z * _b.y);
+	Temp.y = (_a.x * _b.z) - (_a.z * _b.x);
+	Temp.z = (_a.x * _b.y) - (_a.y * _b.x);
+	return Temp;
+}
+
+struct Vec3 Norma(struct Vec3 _a)
+{
+	float mg = sqrt(_a.x * _a.x + _a.y * _a.y + _a.z * _a.z);
+	struct Vec3 temp;
+	temp.x = _a.x / mg;
+	temp.y = _a.y / mg;
+	temp.z = _a.z / mg;
+	return temp;
+}
+
+struct Vec3 VecMinus(struct Vec3 _a, struct Vec3 _b)
+{
+	struct Vec3 temp;
+	temp.x = _a.x - _b.x;
+	temp.y = _a.y - _b.y;
+	temp.z = _a.z - _b.z;
+	return temp;
+}
+
+struct Vec3 VecPlus(struct Vec3 _p, struct Vec3 _b)
+{
+	struct Vec3 temp;
+	temp.x = _p.x + _b.x;
+	temp.y = _p.y + _b.y;
+	temp.z = _p.z + _b.z;
+	return temp;
+}
+
+struct Vec3 VecTimes(struct Vec3 _a, float _p)
+{
+	struct Vec3 temp;
+	temp.x = _a.x * _p;
+	temp.y = _a.y * _p;
+	temp.z = _a.z * _p;
+	return temp;
+}
+
+struct Vec3 VecTimesPlus(struct Vec3 _a, float *_p)
+{
+	struct Vec3 temp;
+	temp.x = _a.x * *_p;
+	temp.y = _a.y * *_p;
+	temp.z = _a.z * *_p;
+	return temp;
+}
+
+struct Vec3 VecDivide(struct Vec3 _a, float _p)
+{
+	struct Vec3 temp;
+	temp.x = _a.x / _p;
+	temp.y = _a.y / _p;
+	temp.z = _a.z / _p;
+	return temp;
+}
+
+struct Colour colourAdd(struct Colour _a, struct Colour _b)
+{
+	struct Colour temp;
+	temp.R = (_a.R + _b.R) / 2;
+	temp.G = (_a.G + _b.G) / 2;
+	temp.B = (_a.B + _b.B) / 2;
+	temp.A = (_a.A + _b.A) / 2;
+	return temp;
+}
+
+struct Colour colourTimes(struct Colour _a, float _b)
+{
+	struct Colour temp;
+	temp.R = _a.R * _b;
+	temp.G = _a.G * _b;
+	temp.B = _a.B * _b;
+	temp.A = _a.A * _b;
+	return temp;
+}
+
+struct Vec3 GetNorma(struct Vec3 _a, struct Vec3 _c, float _r)
+{
+	return VecDivide(VecMinus(_a, _c), _r);
+}
+
+bool Intersect(struct Ray _ray, float *_t, struct Sphere _sphere)
+{
+	struct Vec3 Origin = _ray.m_origin;
+	struct Vec3 Direction = _ray.m_direction;
+	struct Vec3 OC = VecMinus(Origin, _sphere.m_center);
+
+	float b = 2 * DotPro(OC, Direction);
+	float c = DotPro(OC, OC) - _sphere.m_radius * _sphere.m_radius;
+	float disc = b * b - 4 * c;
+
+	if (disc < 0) 
+	{
+		return false;
+	}
+	else
+	{
+		disc = sqrt(disc);
+		float t0 = -b - disc;
+		float t1 = -b + disc;
+
+		if (t0 < t1)
+		{
+			*_t = t0;
+		}
+		else 
+		{
+			*_t = t1;
+		}
+
+		return true;
+	}
+}
+
+
+
+__kernel void main( __global float4 *dst) 
+{
+	uint KWidth = 1920;
+	uint KHeight = 1080;
+
+	struct Colour white;
+	white.R = 255;
+	white.G = 255;
+	white.B = 255;
+	white.A = 255;
+
+	struct Colour red;
+	red.R = 255;
+	red.G = 0;
+	red.B = 0;
+	red.A = 255;
+
+	struct Colour grey;
+	grey.R = 125;
+	grey.G = 125;
+	grey.B = 125;
+	grey.A = 255;
+
+	struct Colour teal;
+	teal.R = 0;
+	teal.G = 125;
+	teal.B = 125;
+	teal.A = 255;
+
+	struct Colour magenta;
+	magenta.R = 255;
+	magenta.G = 0;
+	magenta.B = 236;
+	magenta.A = 255;
+
+	struct Colour yellow;
+	yellow.R = 255;
+	yellow.G = 255;
+	yellow.B = 0;
+	yellow.A = 255;
+
+	struct Sphere light; 
+	light.m_center.x = 1920/2;
+	light.m_center.y = 0;
+	light.m_center.z = 50;
+	light.m_radius = 1;
+
+	struct Sphere sphere1;
+	sphere1.m_center.x = KWidth / 2;
+	sphere1.m_center.y = KHeight / 2;
+	sphere1.m_center.z = 50;
+	sphere1.m_radius = 50;
+	sphere1.m_colour = red;
+
+	struct Sphere sphere2;
+	sphere2.m_center.x = KWidth / 2 - (KWidth / 4);
+	sphere2.m_center.y = 100;
+	sphere2.m_center.z = 50;
+	sphere2.m_radius = 100;
+	sphere2.m_colour = grey;
+
+	struct Sphere sphere3;
+	sphere3.m_center.x = KWidth / 2 + (KWidth / 4);
+	sphere3.m_center.y = 500;
+	sphere3.m_center.z = 50;
+	sphere3.m_radius = 300;
+	sphere3.m_colour = teal;
+
+	struct Sphere sphere4;
+	sphere4.m_center.x = 100;
+	sphere4.m_center.y = 500;
+	sphere4.m_center.z = 50;
+	sphere4.m_radius = 300;
+	sphere4.m_colour = magenta;
+
+	struct Sphere sphere5;
+	sphere5.m_center.x = KWidth / 2 + (KWidth / 4);
+	sphere5.m_center.y = 820;
+	sphere5.m_center.z = 50;
+	sphere5.m_radius = 400;
+	sphere5.m_colour = yellow;
+
+	struct Sphere spherearray[5];
+
+	spherearray[0] = sphere1;
+	spherearray[1] = sphere2;
+	spherearray[2] = sphere3;
+	spherearray[3] = sphere4;
+	spherearray[4] = sphere5;
+
+	float *t;
+
+	float x;
+	float y;
+
+	x = (float)(get_global_id(0) % KWidth);
+	y = (float)(get_global_id(0) / KWidth);
+
+	struct Ray ray;
+	ray.m_origin.x = x;
+	ray.m_origin.y = y;
+	ray.m_origin.z = 0;
+
+	ray.m_direction.x = 0;
+	ray.m_direction.y = 0;
+	ray.m_direction.z = 1;
+
+	int pixel_Hit = 0;
+
+	for (int i = 0; i < 5; i++)
+	{
+		//Check Intersections
+		if (Intersect(ray, &t, spherearray[i]))
+		{
+			struct Vec3 m = VecTimesPlus(ray.m_direction, &t);
+			struct Vec3 PoI = VecPlus(ray.m_origin, m);
+
+			struct Vec3 l = VecMinus(light.m_center, PoI);
+			struct Vec3 n = GetNorma(PoI, spherearray[i].m_center, spherearray[i].m_radius);
+
+			struct Vec3 NormL = Norma(l);
+			struct Vec3 NormN =  Norma(n);
+			float dt = DotPro(NormL,NormN);
+		
+			
+			struct Colour timesColour =  colourTimes(white, dt);
+			struct Colour additionColour = colourAdd(spherearray[i].m_colour, timesColour);
+			struct Colour temp = colourTimes(additionColour, 1.0f);	
+
+			float4 c; 
+			c.x = temp.R;
+			c.y = temp.G;
+			c.z = temp.B;
+			c.w = temp.A;
+
+			if (c.x <   0) c.x = 0;
+			if (c.x > 255) c.x = 255;
+			if (c.y <   0) c.y = 0;
+			if (c.y > 255) c.y = 255;
+			if (c.z <   0) c.z = 0;
+			if (c.z > 255) c.z = 255;
+			if (c.w != 255)c.w = 255;
+
+			dst[get_global_id(0)] = c;
+			pixel_Hit = 1;
+		}	
+	}
+
+	if (pixel_Hit == 0)
+	{
+		dst[get_global_id(0)].x += 0;
+		dst[get_global_id(0)].y += 0;
+		dst[get_global_id(0)].z += 0;
+		dst[get_global_id(0)].w += 255;
+	}		
+
+			
+}
