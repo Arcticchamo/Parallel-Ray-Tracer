@@ -1,1 +1,2 @@
-# Parallel-Ray-Tracer
+# Parallel-Ray-Caster
+
